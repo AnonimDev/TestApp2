@@ -6,7 +6,7 @@ using TestApp2.Models;
 
 namespace ConsoleClient
 {
-    class ClientApi
+    class ClientApi : IDisposable
     {
         private const string APP_PATH = "https://localhost:44311/";
 
@@ -29,6 +29,11 @@ namespace ConsoleClient
                 Console.WriteLine("Ошибка при выполнении запроса: {0}", ex.Message);
                 return sent(model);
             }
+        }
+
+        public void Dispose()
+        {
+	        _client?.Dispose();
         }
     }
 }

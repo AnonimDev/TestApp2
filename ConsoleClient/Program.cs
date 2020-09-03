@@ -6,79 +6,83 @@ using System.Collections.Generic;
 
 namespace ConsoleClient
 {
-    class Program
-    {
-        private const int COUNT_TIME = 500;
+	class Program
+	{
+		private const int COUNT_TIME = 500;
 
-        private static Queue<BaseModel> queue = new Queue<BaseModel>();
+		private static Queue<BaseModel> queue = new Queue<BaseModel>();
 
-        static void Main(string[] args)
-        {
-           
-            Thread thread = new Thread(new ThreadStart(StartTimer));
-            thread.Start();
+		static void Main(string[] args)
+		{
 
-            Thread.Sleep(1000);
+			Thread thread = new Thread(new ThreadStart(StartTimer));
+			thread.Start();
 
-            Worker();
-            
-            Console.ReadLine();
-            #region thread
-            //Thread thread = new Thread(new ThreadStart(DoWork));
-            //thread.Start();
+			Worker();
 
-            //Thread thread2 = new Thread(new ParameterizedThreadStart(DoWork2));
-            //thread2.Start(int.MaxValue);
+			Console.ReadLine();
+			#region thread
+			//Thread thread = new Thread(new ThreadStart(DoWork));
+			//thread.Start();
 
-            //int j = 0;
-            //for (int i = 0; i < int.MaxValue; i++)
-            //{
-            //    j++;
+			//Thread thread2 = new Thread(new ParameterizedThreadStart(DoWork2));
+			//thread2.Start(int.MaxValue);
 
-            //    if (j % 100000 == 0)
-            //    {
-            //        Console.WriteLine("Основной поток");
-            //    }
-            //}
-            #endregion
-        }
+			//int j = 0;
+			//for (int i = 0; i < int.MaxValue; i++)
+			//{
+			//    j++;
 
-        public static void StartTimer()
-        {
-            TimerCallback tm = new TimerCallback(GenerationObject);
+			//    if (j % 100000 == 0)
+			//    {
+			//        Console.WriteLine("Основной поток");
+			//    }
+			//}
+			#endregion
+		}
 
-            Timer timer = new Timer(tm, 0, 0, COUNT_TIME);
-        }
+		public static void StartTimer()
+		{
+			TimerCallback tm = new TimerCallback(GenerationObject);
 
-        public static void GenerationObject(object obj)
-        {
-            BaseModel model = new BaseModel
-            {
-                GUID = Guid.NewGuid(),
-                CreatedAt = DateTime.Now
-            };
-            queue.Enqueue(model);
-            Console.WriteLine($"{JsonSerializer.Serialize<BaseModel>(model)}");
-        }
+			Timer timer = new Timer(tm, 0, 0, COUNT_TIME);
+		}
 
-        public static void Worker()
-        {
-            try
-            {
-                for (int i = 0; i < int.MaxValue; i++)
-                {
-                    ClientApi client = new ClientApi();
-                    BaseModel model = queue.Dequeue();
-                    client.sent(model);
-                    Thread.Sleep(1000);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Ошибка: {0}", ex.Message);
-                Thread.Sleep(1500);
-                Worker();
-            }
-        }
-    }
+		public static void GenerationObject(object obj)
+		{
+			BaseModel model = new BaseModel
+			{
+				GUID = Guid.NewGuid(),
+				CreatedAt = DateTime.Now
+			};
+			queue.Enqueue(model);
+			Console.WriteLine($"{JsonSerializer.Serialize<BaseModel>(model)}");
+		}
+
+		public static void Worker()
+		{
+
+			while (true)
+			{
+				try
+				{
+					BaseModel model;
+					if (!queue.TryDequeue(out model))
+					{
+						Thread.Sleep(50);
+					}
+
+					ClientApi client = new ClientApi();
+					client.sent(model);
+
+					client.Dispose();
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine("Ошибка: {0}", ex.Message);
+					Thread.Sleep(50);
+				}
+			}
+		}
+	}
 }
